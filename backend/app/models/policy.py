@@ -103,11 +103,10 @@ class PolicyChunk(Base):
     chunk_text: Mapped[str] = mapped_column(Text, nullable=False)
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    # pgvector embedding column — 384 dims for all-MiniLM-L6-v2
+    # pgvector embedding column — dimensions configured via EMBEDDING_DIMENSION env var
     # Column is created via Alembic migration using raw SQL for portability.
     embedding: Mapped[Optional[Any]] = mapped_column(
-        Vector(384) if _vector_available else Text,  # type: ignore[arg-type]
-        Vector(get_settings().embedding_dimensions) if _vector_available else Text,  # type: ignore[arg-type]
+        Vector(get_settings().embedding_dimension) if _vector_available else Text,  # type: ignore[arg-type]
         nullable=True,
     )
 

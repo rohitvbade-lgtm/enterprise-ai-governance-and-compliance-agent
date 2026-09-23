@@ -19,10 +19,6 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
-        # Prefix prevents collision with system env vars like DEBUG, PATH, etc.
-        # All our env vars use AGT_ prefix in the environment.
-        # But we keep .env file keys un-prefixed for developer ergonomics
-        # by NOT setting env_prefix here — instead we use explicit field aliases below.
     )
 
     # ── Application ───────────────────────────────────────────────────────────
@@ -38,16 +34,16 @@ class Settings(BaseSettings):
     )
 
     # ── LLM Provider ──────────────────────────────────────────────────────────
-    llm_provider: Literal["groq", "ollama"] = Field(
-        default="groq",
     llm_provider: Literal["groq", "ollama", "openai"] = Field(
         default="openai",
         description="LLM backend to use. Swap without changing agent logic.",
     )
 
-    # Groq
+    # Groq (legacy separate config)
     groq_api_key: str = Field(default="", description="Groq API key from console.groq.com")
     groq_model: str = Field(default="llama-3.1-8b-instant", description="Groq model name")
+
+    # Generic OpenAI-compatible LLM config (used by groq/openai providers)
     llm_model: str = Field(default="llama-3.3-70b-versatile", description="LLM model name")
     llm_base_url: str = Field(default="https://api.groq.com/openai/v1", description="LLM server URL")
     llm_api_key: str = Field(default="", description="LLM API key")
@@ -92,13 +88,9 @@ class Settings(BaseSettings):
         description="Embedding provider to use",
     )
     embedding_model: str = Field(
-        default="all-MiniLM-L6-v2",
-        description="SentenceTransformers model name. Produces 384-dim vectors.",
         default="nomic-embed-text:latest",
-        description="Model name.",
+        description="Model name for embeddings.",
     )
-    embedding_dimensions: int = Field(
-        default=384,
     embedding_base_url: str = Field(default="http://localhost:11434/v1", description="Embedding server URL")
     embedding_api_key: str = Field(default="ollama", description="Embedding API key")
     embedding_dimension: int = Field(
@@ -107,8 +99,6 @@ class Settings(BaseSettings):
     )
 
     # ── RAG ───────────────────────────────────────────────────────────────────
-    rag_top_k: int = Field(
-        default=5,
     retrieval_top_k: int = Field(
         default=6,
         description="Number of policy chunks to retrieve per semantic query.",
@@ -144,4 +134,3 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return cached Settings instance. Call this everywhere."""
     return Settings()
-

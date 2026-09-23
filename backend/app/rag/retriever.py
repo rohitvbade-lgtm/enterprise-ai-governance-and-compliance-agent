@@ -27,7 +27,6 @@ class PolicyRetriever:
     """
 
     def __init__(self, top_k: int | None = None):
-        self.top_k = top_k or get_settings().rag_top_k
         self.top_k = top_k or get_settings().retrieval_top_k
 
     async def retrieve(

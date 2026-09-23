@@ -138,3 +138,4 @@ with tab_audit:
         st.dataframe(df_events[['event_type', 'actor', 'summary', 'created_at']], use_container_width=True)
     else:
         st.info("No audit events found.")
+

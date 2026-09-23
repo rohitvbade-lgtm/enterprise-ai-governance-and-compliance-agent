@@ -150,19 +150,29 @@ async def save_assessment(state: GovernanceState) -> dict[str, Any]:
     
     async with get_db() as db:
         # 1. Save GovernanceAssessment
+        risk_for_assessment = state.get("risk_result")
         assessment = GovernanceAssessment(
             application_id=state["application_id"],
             assessment_type=state["assessment_type"],
             input_text=state.get("masked_text", state["input_text"]),
-            decision=state["decision"]
+            overall_risk_score=risk_for_assessment.total_score if risk_for_assessment else None,
+            risk_level=risk_for_assessment.risk_level if risk_for_assessment else None,
+            decision=state["decision"],
+            status="COMPLETE",
         )
         db.add(assessment)
         await db.flush()
         
         # 2. Save RiskAssessment
         risk = state["risk_result"]
+        fd = risk.factors_detail or {}
         risk_model = RiskAssessment(
             assessment_id=assessment.id,
+            data_risk=fd.get("data_risk", {}).get("raw_score", 0.0),
+            security_risk=fd.get("security_risk", {}).get("raw_score", 0.0),
+            compliance_risk=fd.get("compliance_risk", {}).get("raw_score", 0.0),
+            model_risk=fd.get("model_risk", {}).get("raw_score", 0.0),
+            business_impact=fd.get("business_impact", {}).get("raw_score", 0.0),
             total_score=risk.total_score,
             risk_level=risk.risk_level,
             factors_detail=risk.factors_detail,

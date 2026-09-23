@@ -125,7 +125,8 @@ async def main():
         # Scenario 2: PII Violation
         await print_scenario_header(2, "PII Violation (CRITICAL/HIGH -> BLOCK/REVIEW)")
         app2 = app_map.get("Customer Support Copilot")
-        input2 = "Here is my info: john.doe@example.com, phone +91-9876543210, Aadhaar 1234-5678-9012. Help me."
+        # Use a valid Aadhaar (must start with digit 2-9 per UIDAI spec)
+        input2 = "Here is my info: john.doe@example.com, phone +91-9876543210, Aadhaar 2345-6789-0123. Help me."
         print(f"App: {app2['name']}")
         print(f"Input: {input2}")
         res2 = await run_evaluation(client, app2["id"], input2)
@@ -191,7 +192,7 @@ async def main():
             approvals = appr_resp.json()
             
             # Find the one for our assessment
-            approval = next((a for a in approvals if a["assessment_id"] == res5["id"]), None)
+            approval = next((a for a in approvals if a["assessment_id"] == res5["assessment_id"]), None)
             if approval:
                 print(f"Found Approval Request ID: {approval['id']}")
                 print("Approving...")

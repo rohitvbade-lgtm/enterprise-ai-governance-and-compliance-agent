@@ -5,8 +5,9 @@ Returns a LangChain BaseChatModel based on LLM_PROVIDER env var.
 Agents never touch provider selection — they only use get_llm().
 
 Supported providers:
-  - groq   (primary, free credits at console.groq.com)
-  - ollama (local fallback)
+  - openai  (OpenAI-compatible endpoint — used by Groq, local vLLM, etc.)
+  - groq    (legacy: uses groq_api_key / groq_model fields)
+  - ollama  (local fallback)
 """
 from __future__ import annotations
 
@@ -39,7 +40,30 @@ def get_llm(settings: Settings | None = None, temperature: float = 0.0) -> BaseC
     provider = settings.llm_provider.lower()
     logger.info("initializing_llm_provider", provider=provider)
 
-    if provider == "groq":
+    if provider == "openai":
+        # Generic OpenAI-compatible endpoint (works for Groq, OpenAI, local vLLM, etc.)
+        try:
+            from langchain_openai import ChatOpenAI
+        except ImportError as e:
+            raise ImportError(
+                "langchain-openai is required for the openai provider. "
+                "Run: uv add langchain-openai"
+            ) from e
+
+        if not settings.llm_api_key:
+            raise ValueError(
+                "LLM_API_KEY is not set. Add it to your .env file."
+            )
+
+        return ChatOpenAI(
+            api_key=settings.llm_api_key,  # type: ignore[arg-type]
+            model=settings.llm_model,
+            base_url=settings.llm_base_url,
+            temperature=temperature,
+            max_retries=2,
+        )
+
+    elif provider == "groq":
         try:
             from langchain_groq import ChatGroq
         except ImportError as e:
@@ -79,5 +103,5 @@ def get_llm(settings: Settings | None = None, temperature: float = 0.0) -> BaseC
     else:
         raise ValueError(
             f"Unknown LLM_PROVIDER: {provider!r}. "
-            f"Supported values: 'groq', 'ollama'"
+            f"Supported values: 'openai', 'groq', 'ollama'"
         )
