@@ -120,11 +120,22 @@ async def retrieve_policies(state: GovernanceState) -> dict[str, Any]:
             severity_filter = ["CRITICAL", "HIGH", "MEDIUM"]
         # HIGH/CRITICAL apps: no filter — retrieve all policies
 
-    policies = await retriever.retrieve(
-        query=state["text_to_evaluate"],
-        severity_filter=severity_filter,
-        top_k=5,
-    )
+    try:
+        policies = await retriever.retrieve(
+            query=state["text_to_evaluate"],
+            severity_filter=severity_filter,
+            top_k=5,
+        )
+    except Exception as exc:
+        # Embedding service unavailable (e.g. Ollama not running).
+        # Gracefully degrade: return no policies so deterministic security/privacy
+        # checks on parallel branches still complete successfully.
+        logger.warning(
+            "retrieve_policies_failed",
+            error=str(exc),
+            phase=state["assessment_phase"],
+        )
+        policies = []
     return {"retrieved_policies": policies}
 
 

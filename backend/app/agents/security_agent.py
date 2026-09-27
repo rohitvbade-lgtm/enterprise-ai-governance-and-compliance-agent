@@ -12,7 +12,7 @@ from backend.app.security.injection_detector import InjectionDetector
 from backend.app.schemas.finding import FindingCreate
 
 _SECRET_RE = re.compile(
-    r"(sk-[A-Za-z0-9]{20,}|Bearer\s+[A-Za-z0-9\-._~+/]+=*|"
+    r"(sk-[A-Za-z0-9_\-]{10,}|Bearer\s+[A-Za-z0-9\-._~+/]+=*|"
     r"password\s*[:=]\s*\S+|api[_-]?key\s*[:=]\s*\S+)",
     re.IGNORECASE,
 )

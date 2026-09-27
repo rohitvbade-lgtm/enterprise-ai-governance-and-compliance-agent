@@ -61,7 +61,9 @@ def get_llm(settings: Settings | None = None, temperature: float = 0.0) -> BaseC
             base_url=settings.llm_base_url,
             temperature=temperature,
             max_retries=2,
+            max_tokens=2048,
         )
+
 
     elif provider == "groq":
         try:
