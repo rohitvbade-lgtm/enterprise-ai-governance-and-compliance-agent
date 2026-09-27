@@ -114,10 +114,14 @@ class RiskEngine:
         mapping = {
             "PII": "data_risk",
             "DATA_PRIVACY": "data_risk",
+            "OUTPUT_PII_LEAKAGE": "data_risk",
             "PROMPT_INJECTION": "security_risk",
             "SECURITY": "security_risk",
             "ACCESS_CONTROL": "security_risk",
+            "CREDENTIAL_LEAKAGE": "security_risk",
+            "SYSTEM_PROMPT_DISCLOSURE": "security_risk",
             "POLICY_VIOLATION": "compliance_risk",
+            "HARMFUL_ADVICE": "compliance_risk",
             "MODEL_RISK": "model_risk",
         }
         return mapping.get(finding_type.upper(), "compliance_risk")

@@ -94,7 +94,6 @@ def upgrade() -> None:
 
     # Replace TEXT placeholder with actual vector(384) column
     op.execute("ALTER TABLE policy_chunks DROP COLUMN embedding")
-    op.execute("ALTER TABLE policy_chunks ADD COLUMN embedding vector(384)")
     op.execute("ALTER TABLE policy_chunks ADD COLUMN embedding vector(768)")
 
     # ivfflat index for approximate nearest neighbor search (requires data to be loaded first)

@@ -52,7 +52,7 @@ async def main() -> None:
     print("POLICY INGESTION COMPLETE")
     print("=" * 60)
     for r in results:
-        print(f"  ✓ {r['policy_code']:20s}  {r['policy_name'][:40]:40s}  ({r['chunks_created']} chunks)")
+        print(f"  [+] {r['policy_code']:20s}  {r['policy_name'][:40]:40s}  ({r['chunks_created']} chunks)")
     print(f"\nTotal policies ingested: {len(results)}")
     total_chunks = sum(r["chunks_created"] for r in results)
     print(f"Total chunks embedded:  {total_chunks}")

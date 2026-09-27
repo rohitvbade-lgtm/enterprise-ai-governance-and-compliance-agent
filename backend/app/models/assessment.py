@@ -1,8 +1,12 @@
 """
 GovernanceAssessment and Finding models.
 
-GovernanceAssessment — one complete evaluation of an AI application/input.
-Finding — a piece of evidence produced by an agent (PII, injection, policy violation, etc.).
+One GovernanceAssessment = one audit cycle for ONE piece of text.
+  - phase="INPUT"  → auditing the user's prompt before it reaches the AI
+  - phase="OUTPUT" → auditing the AI's response after the AI has replied
+Output assessments link back to their corresponding input assessment
+via input_assessment_id so you can trace the full interaction.
+Finding — a specific violation found by an agent during an assessment.
 """
 from __future__ import annotations
 
@@ -10,7 +14,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,8 +25,13 @@ class GovernanceAssessment(Base):
     """
     One governance evaluation run against an AI application.
 
-    Created when POST /assessments is called.
-    The LangGraph workflow populates this record as it progresses.
+    INPUT phase:  Created when the user submits a prompt. The system audits
+                  the prompt for PII, prompt injection, and policy violations
+                  BEFORE it reaches the AI application.
+    OUTPUT phase: Created when the AI application responds. The system audits
+                  the AI's response for PII leakage, credential leakage,
+                  harmful advice, and system prompt disclosure.
+    Two separate rows, two separate risk scores, two separate decisions.
     """
 
     __tablename__ = "governance_assessments"
@@ -37,18 +46,31 @@ class GovernanceAssessment(Base):
         index=True,
     )
 
+    # Which phase of the interaction this assessment covers
+    assessment_phase: Mapped[str] = mapped_column(
+        String(10), nullable=False
+    )  # INPUT | OUTPUT
+
     # What triggered this assessment
     assessment_type: Mapped[str] = mapped_column(
         String(50), nullable=False, default="REAL_TIME"
     )  # REAL_TIME | SCHEDULED | MANUAL
 
-    # The input being evaluated (may be redacted if PII was found before storage)
-    input_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    input_text_redacted: Mapped[bool] = mapped_column(
-        # True if PII was masked in the stored input_text
-        String(5),
-        nullable=False,
-        default="false",
+    # For OUTPUT assessments: links back to the INPUT assessment of the same interaction.
+    # NULL for INPUT assessments.
+    input_assessment_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("governance_assessments.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    # The text being evaluated (user prompt for INPUT, AI response for OUTPUT).
+    # Stored post-redaction — raw PII is never persisted.
+    evaluated_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # True when PII was found and masked before storage
+    evaluated_text_redacted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
     )
 
     # Results
@@ -89,10 +111,24 @@ class GovernanceAssessment(Base):
         back_populates="assessment"
     )
 
+    # For INPUT assessments: all output assessments that followed this input
+    output_assessments: Mapped[list["GovernanceAssessment"]] = relationship(
+        "GovernanceAssessment",
+        foreign_keys=[input_assessment_id],
+        back_populates="input_assessment",
+    )
+    # For OUTPUT assessments: the input assessment this was triggered by
+    input_assessment: Mapped[Optional["GovernanceAssessment"]] = relationship(
+        "GovernanceAssessment",
+        foreign_keys=[input_assessment_id],
+        back_populates="output_assessments",
+        remote_side=[id],
+    )
+
     def __repr__(self) -> str:
         return (
-            f"<GovernanceAssessment id={self.id} "
-            f"decision={self.decision} risk={self.overall_risk_score}>"
+            f"<GovernanceAssessment id={self.id} phase={self.assessment_phase} "
+            f"decision={self.decision} risk={self.risk_level}>"
         )
 
 
@@ -160,4 +196,3 @@ class Finding(Base):
             f"<Finding type={self.finding_type} severity={self.severity} "
             f"confidence={self.confidence:.2f} source={self.source}>"
         )
-

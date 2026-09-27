@@ -227,7 +227,7 @@ async def ingest_all_policies(policies_dir: Path | None = None) -> list[dict[str
     """
     if policies_dir is None:
         # Resolve relative to project root
-        project_root = Path(__file__).parent.parent.parent.parent.parent
+        project_root = Path(__file__).resolve().parents[3]
         policies_dir = project_root / "knowledge" / "policies"
 
     if not policies_dir.exists():

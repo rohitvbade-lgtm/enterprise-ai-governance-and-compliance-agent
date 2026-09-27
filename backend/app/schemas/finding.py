@@ -23,10 +23,11 @@ class FindingResponse(BaseModel):
     confidence: float
     source: str
     created_at: datetime
+    target: Optional[str] = "INPUT"
 
 
 class FindingCreate(BaseModel):
-    """Internal schema used by agents to create findings."""
+    """Internal schema used by agents to report findings."""
     finding_type: str
     severity: str
     description: str
