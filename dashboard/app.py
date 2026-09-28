@@ -172,7 +172,7 @@ with tab_assessments:
             "risk_level", "decision", "status", "created_at",
         ] if c in df.columns]
         st.dataframe(
-            df[display_cols].style.applymap(highlight_phase, subset=["Phase"]),
+            df[display_cols].style.map(highlight_phase, subset=["Phase"]),
             use_container_width=True,
         )
         st.caption(f"Showing {len(assessments)} assessment(s)")
@@ -213,7 +213,7 @@ with tab_interaction:
             if selected_input:
                 st.metric("Decision", selected_input.get("decision", "N/A"))
                 st.metric("Risk Level", selected_input.get("risk_level", "N/A"))
-                st.metric("Risk Score", f"{selected_input.get('overall_risk_score', 0):.2f}")
+                st.metric("Risk Score", f"{selected_input.get('overall_risk_score') or 0:.2f}")
                 st.caption(f"ID: {selected_input.get('id')}")
                 st.caption(f"Audited: {selected_input.get('created_at', '')[:19]}")
                 if selected_input.get("evaluated_text_redacted"):
